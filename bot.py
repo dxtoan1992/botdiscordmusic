@@ -21,7 +21,7 @@ bot=commands.Bot(command_prefix=get_prefix,description='Multipurpose Discord Bot
 exts=['music'] #Add your Cog extensions here
 
 
-@client.event
+@bot.event
 async def on_ready():
     song_name='TWICE - What is love?'  #Status name
     activity_type=discord.ActivityType.listening #Status type
