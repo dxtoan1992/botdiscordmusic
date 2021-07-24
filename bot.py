@@ -37,4 +37,4 @@ for i in exts:
     bot.load_extension(i)
 
 
-client.run(os.environ['token'])
+bot.run(os.environ['token'])
