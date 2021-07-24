@@ -2,7 +2,6 @@ import discord,asyncio,youtube_dl
 from discord.ext import commands
 import os
 
-load_dotenv()
 
 
 
