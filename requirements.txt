@@ -2,7 +2,3 @@ git+https://github.com/Rapptz/discord.py
 git+https://github.com/ytdl-org/youtube-dl
 PyNaCl
 google-api-python-client
-discord
-asyncio
-youtube_dl
-PyNaCl
