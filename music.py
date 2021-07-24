@@ -8,21 +8,6 @@ from discord.ext import commands
 from googleapiclient.discovery import build
 from discord.ext.commands import command
 
-# import pymongo
-# NOTE: Import pymongo if you are using the database function commands
-# NOTE: Also add `pymongo` and `dnspython` inside the requirements.txt file if you are using pymongo
-
-# TODO: CREATE PLAYLIST SUPPORT FOR MUSIC
-
-
-# NOTE: Without database, the music bot will not save your volume
-
-
-# flat-playlist:True?
-# extract_flat:True
-# audioquality 0 best 9 worst
-# format bestaudio/best or worstaudio
-# 'noplaylist': None
 ytdl_format_options = {
     'audioquality': 5,
     'format': 'bestaudio',
@@ -37,11 +22,9 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    # bind to ipv4 since ipv6 addresses cause issues sometimes
     'source_address': '0.0.0.0'
 }
 
-# Download youtube-dl options
 ytdl_download_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': 'downloads/%(title)s.mp3',
@@ -53,7 +36,6 @@ ytdl_download_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    # bind to ipv4 since ipv6 addreacses cause issues sometimes
     'source_addreacs': '0.0.0.0',
     'output': r'youtube-dl',
     'postprocessors': [{
@@ -68,19 +50,17 @@ stim = {
     "ignoreerrors": True,
     'quiet': True,
     "no_warnings": True,
-    "simulate": True,  # do not keep the video files
+    "simulate": True,
     "nooverwrites": True,
     "keepvideo": False,
     "noplaylist": True,
     "skip_download": False,
-    # bind to ipv4 since ipv6 addresses cause issues sometimes
     'source_address': '0.0.0.0'
 }
 
 
 ffmpeg_options = {
     'options': '-vn',
-    # 'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
 
 
@@ -134,11 +114,9 @@ class Downloader(discord.PCMVolumeTransformer):
 class MusicPlayer(commands.Cog, name='Music'):
     def __init__(self, bot):
         self.bot = bot
-        # self.music=self.database.find_one('music')
         self.player = {
             "audio_files": []
         }
-        # self.database_setup()
 
     def database_setup(self):
         URL = os.getenv("MONGO")
@@ -167,8 +145,6 @@ class MusicPlayer(commands.Cog, name='Music'):
             try:
                 self.player[user.guild.id]['queue'].clear()
             except KeyError:
-                # NOTE: server ID not in bot's local self.player dict
-                # Server ID lost or was not in data before disconnecting
                 print(f"Failed to get guild id {user.guild.id}")
 
     async def filename_generator(self):
@@ -202,10 +178,8 @@ class MusicPlayer(commands.Cog, name='Music'):
         title1 = await Downloader.get_info(self, url=song)
         title = title1[0]
         data = title1[1]
-        # NOTE:needs fix here
         if data['queue']:
             await self.playlist(data, msg)
-            # NOTE: needs to be embeded to make it better output
             return await msg.send(f"Added playlist {data['title']} to queue")
         self.player[msg.guild.id]['queue'].append(
             {'title': title, 'author': msg})
@@ -242,11 +216,8 @@ class MusicPlayer(commands.Cog, name='Music'):
             msg.voice_client.play(
                 source, after=lambda a: loop.create_task(self.done(msg)))
             msg.voice_client.source.volume = self.player[msg.guild.id]['volume']
-            # if str(msg.guild.id) in self.music:
-            #     msg.voice_client.source.volume=self.music['vol']/100
         except Exception as Error:
-            # Has no attribute play
-            print(Error)  # NOTE: output back the error for later debugging
+            print(Error)
 
     async def done(self, msg, msgId: int = None):
         """
@@ -304,8 +275,6 @@ class MusicPlayer(commands.Cog, name='Music'):
         msg.voice_client.play(
             download, after=lambda a: loop.create_task(self.done(msg, msgId.id)))
 
-        # if str(msg.guild.id) in self.music: #NOTE adds user's default volume if in database
-        #     msg.voice_client.source.volume=self.music[str(msg.guild.id)]['vol']/100
         msg.voice_client.source.volume = self.player[msg.guild.id]['volume']
         return msg.voice_client
 
@@ -317,7 +286,7 @@ class MusicPlayer(commands.Cog, name='Music'):
         `Command:` play(song_name)
         """
         if msg.guild.id in self.player:
-            if msg.voice_client.is_playing() is True:  # NOTE: SONG CURRENTLY PLAYING
+            if msg.voice_client.is_playing() is True:
                 return await self.queue(msg, song)
 
             if self.player[msg.guild.id]['queue']:
@@ -327,7 +296,6 @@ class MusicPlayer(commands.Cog, name='Music'):
                 return await self.start_song(msg, song)
 
         else:
-            # IMPORTANT: THE ONLY PLACE WHERE NEW `self.player[msg.guild.id]={}` IS CREATED
             self.player[msg.guild.id] = {
                 'player': None,
                 'queue': [],
@@ -362,13 +330,10 @@ class MusicPlayer(commands.Cog, name='Music'):
 
         if msg.voice_client.channel != msg.author.voice.channel:
 
-            # NOTE: Check player and queue
             if msg.voice_client.is_playing() is False and not self.player[msg.guild.id]['queue']:
                 return await msg.voice_client.move_to(msg.author.voice.channel)
-                # NOTE: move bot to user's voice channel if queue does not exist
 
             if self.player[msg.guild.id]['queue']:
-                # NOTE: user must join same voice channel if queue exist
                 return await msg.send("Please join the same voice channel as the bot to add song to queue")
 
     @commands.has_permissions(manage_channels=True)
@@ -596,8 +561,6 @@ class MusicPlayer(commands.Cog, name='Music'):
                 if msg.voice_client.channel == msg.author.voice.channel and msg.voice_client.is_playing() is True:
                     msg.voice_client.source.volume = vol
                     self.player[msg.guild.id]['volume'] = vol
-                    # if (msg.guild.id) in self.music:
-                    #     self.music[str(msg.guild.id)]['vol']=vol
                     return await msg.message.add_reaction(emoji='✅')
 
         return await msg.send("**Please join the same voice channel as the bot to use the command**".title(), delete_after=30)
